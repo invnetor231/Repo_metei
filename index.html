@@ -31,6 +31,15 @@ a{color:var(--yellow)}.statusline{padding:10px;background:#151515;border-left:3p
  <div class="loopbar"><button id="playLoop">▶ Iniciar loop</button><button id="previousFrame">◀ Anterior</button><button id="nextFrame">Próximo ▶</button><button id="stopLoop">Parar loop</button><select id="loopSpeed"><option value="1200">Lento</option><option value="700" selected>Normal</option><option value="350">Rápido</option></select><span id="loopInfo" class="small">Aguardando imagens</span></div>
 </div>
 <div id="status" role="status">Preparando mapa...</div><div id="map"></div>
+<script>
+/* Diagnóstico visível: evita deixar a interface presa silenciosamente na mensagem inicial. */
+(function(){
+  const timer=setTimeout(()=>{const el=document.getElementById("status");if(el&&el.textContent.trim()==="Preparando mapa...")el.textContent="A inicialização do JavaScript não terminou. Recarregue a página; se persistir, confira o deploy e os logs do Render.";},10000);
+  window.__bsmsStartupFinished=()=>clearTimeout(timer);
+  window.addEventListener("error",e=>{const el=document.getElementById("status");if(el&&(!el.textContent||el.textContent.includes("Preparando mapa")))el.textContent="Erro de inicialização: "+(e.message||"falha ao carregar um recurso JavaScript")+". Confira a conexão e os logs do navegador.";});
+  window.addEventListener("unhandledrejection",e=>{const el=document.getElementById("status");if(el)el.textContent="Falha JavaScript: "+String(e.reason&&e.reason.message||e.reason||"erro não identificado");});
+})();
+</script>
 <section id="wrfPanel" class="panel">
 <h2>WRF — CPTEC/INPE</h2><p>Portal oficial do modelo numérico.</p>
 <p><a href="https://previsaonumerica.cptec.inpe.br/wrf/" target="_blank" rel="noopener"><button class="primary">Abrir WRF no CPTEC</button></a> <button id="backRadar">Voltar ao radar</button></p>
@@ -269,19 +278,4 @@ function drawSkew(){
    ctx.fillStyle="#333";ctx.fillText(t+"°",xT(t,pBottom)-10,bottom+20);
  }
  // Frame and labels
- ctx.strokeStyle="#777";ctx.strokeRect(left,top,right-left,bottom-top);
- ctx.fillStyle="#222";ctx.font="bold 18px Arial";ctx.fillText("Skew-T / Log-P",left,28);
- ctx.font="12px Arial";ctx.fillText("Pressão (hPa)",20,top-12);
- if(!soundingRows.length){
-   ctx.font="16px Arial";ctx.fillText("Consulte uma sondagem observada para desenhar o perfil.",left+18,410);
-   ctx.fillStyle="#b00";ctx.fillText("Temperatura: vermelho · Ponto de orvalho: verde · Barbelas: vento",left, H-18);
-   return;
- }
- // Thermodynamic traces
- [["t","#d62828"],["td","#17803d"]].forEach(([key,color])=>{
-   const valid=soundingRows.filter(r=>Number.isFinite(r.p)&&Number.isFinite(r[key])&&r.p>=pTop&&r.p<=pBottom);
-   if(valid.length<2)return;
-   ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=2.8;
-   valid.forEach((r,i)=>i?ctx.lineTo(xT(r[key],r.p),yP(r.p)):ctx.moveTo(xT(r[key],r.p),yP(r.p)));
-   ctx.stroke();
-   valid.forEach(r=>{ctx.beginPath();ctx.fillStyle=color;ctx.arc(xT(r[key],r.p),yP(r.p),2.2
+ ctx.strokeStyle="#777
