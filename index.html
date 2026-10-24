@@ -41,32 +41,32 @@ a{color:var(--yellow)}.statusline{padding:10px;background:#151515;border-left:3p
 <p class="small">Consulta radiossondagens observadas de estações brasileiras identificadas por número WMO. A disponibilidade varia por estação e horário; sem observação válida, o BSMS não desenha perfil. O serviço intermediário precisa estar em execução.</p>
 <div class="toolbar">
 <label>Estação <select id="stationSelect">
-<option value="83746">Rio de Janeiro / Galeão — 83746</option>
-<option value="83780">São Paulo / Congonhas — 83780</option>
-<option value="82332">Manaus — 82332</option>
-<option value="82193">Belém — 82193</option>
-<option value="83378">Brasília — 83378</option>
-<option value="83612">Campo Grande — 83612</option>
-<option value="83971">Porto Alegre — 83971</option>
-<option value="83840">Curitiba — 83840</option>
-<option value="82900">Recife — 82900</option>
-<option value="83229">Salvador — 83229</option>
-<option value="82022">Boa Vista — 82022</option>
-<option value="82099">Macapá — 82099</option>
-<option value="82281">São Luís — 82281</option>
-<option value="82397">Fortaleza — 82397</option>
-<option value="82599">Natal — 82599</option>
-<option value="82824">Porto Velho — 82824</option>
-<option value="82917">Rio Branco — 82917</option>
-<option value="82965">Alta Floresta — 82965</option>
-<option value="82983">Petrolina — 82983</option>
-<option value="83208">Vilhena — 83208</option>
-<option value="83362">Cuiabá — 83362</option>
-<option value="83498">Caravelas — 83498</option>
-<option value="83566">Confins / Belo Horizonte — 83566</option>
-<option value="83649">Vitória — 83649</option>
-<option value="83899">Florianópolis — 83899</option>
-<option value="83937">Santa Maria — 83937</option>
+<option value="83746">RIO DE JANEIRO/RJ — GALEÃO — 83746</option>
+<option value="83780">SÃO PAULO/SP — CONGONHAS — 83780</option>
+<option value="82332">MANAUS/AM — 82332</option>
+<option value="82193">BELÉM/PA — 82193</option>
+<option value="83378">BRASÍLIA/DF — 83378</option>
+<option value="83612">CAMPO GRANDE/MS — 83612</option>
+<option value="83971">PORTO ALEGRE/RS — 83971</option>
+<option value="83840">CURITIBA/PR — 83840</option>
+<option value="82900">RECIFE/PE — 82900</option>
+<option value="83229">SALVADOR/BA — 83229</option>
+<option value="82022">BOA VISTA/RR — 82022</option>
+<option value="82099">MACAPÁ/AP — 82099</option>
+<option value="82281">SÃO LUÍS/MA — 82281</option>
+<option value="82397">FORTALEZA/CE — 82397</option>
+<option value="82599">NATAL/RN — 82599</option>
+<option value="82824">PORTO VELHO/RO — 82824</option>
+<option value="82917">RIO BRANCO/AC — 82917</option>
+<option value="82965">ALTA FLORESTA/MT — 82965</option>
+<option value="82983">PETROLINA/PE — 82983</option>
+<option value="83208">VILHENA/RO — 83208</option>
+<option value="83362">CUIABÁ/MT — 83362</option>
+<option value="83498">CARAVELAS/BA — 83498</option>
+<option value="83566">BELO HORIZONTE/MG — CONFINS — 83566</option>
+<option value="83649">VITÓRIA/ES — 83649</option>
+<option value="83899">FLORIANÓPOLIS/SC — 83899</option>
+<option value="83937">SANTA MARIA/RS — 83937</option>
 </select></label>
 <label>Data UTC <input id="soundingDate" type="date"></label>
 <label>Hora UTC <select id="soundingHour"><option>00</option><option>12</option></select></label>
@@ -88,10 +88,7 @@ a{color:var(--yellow)}.statusline{padding:10px;background:#151515;border-left:3p
 const API_KEY="7qwre4IVDPRVlfPMxLyh25wFBnExIT0XictqRqLt";
 const RADAR_API="https://api-redemet.decea.mil.br/produtos/radar/10km";
 /* Endereço do serviço Python. Se hospedar o serviço, troque por sua URL HTTPS. */
-// Em hospedagem, use a API no mesmo domínio. O localhost fica apenas para execução local.
-const SOUNDING_API=(location.protocol==="file:"||location.hostname==="127.0.0.1"||location.hostname==="localhost")
-  ?"http://127.0.0.1:8000/api/sounding"
-  :new URL("/api/sounding",location.origin).href;
+const SOUNDING_API="http://127.0.0.1:8000/api/sounding";
 const $=id=>document.getElementById(id);
 let map=null,radarGroup=null,radarItems=[],frames=[],radarVisible=true,busy=false,frameIndex=0,loopTimer=null,currentTab="radar",soundingRows=[];
 function status(m){$("status").textContent=m}function soundingStatus(m){$("soundingStatus").textContent=m}
@@ -123,8 +120,63 @@ function extractRadarFrames(json){
 }
 function flattenFrames(frameList){return frameList.flat();}
 function radarKey(x){return String(x.localidade||x.id||x.nome||x.path)}
+function radarDisplayName(value){
+  let name=String(value||"").trim().replace(/\s+/g," ").toLocaleUpperCase("pt-BR");
+  name=name.replace(/^RADAR\s*[-–:]\s*/,"").trim();
+  // A REDEMET frequentemente retorna somente o código da área em "localidade".
+  // Resolver esses códigos para o nome oficial da cidade, sem mostrar abreviações.
+  const known={
+    "AL":"ALMENARA/MG","BE":"BELÉM/PA","BV":"BOA VISTA/RR","CN":"CANGUÇU/RS",
+    "CZ":"CRUZEIRO DO SUL/AC","GA":"GAMA/DF","JR":"JARAGUARI/MS","MQ":"MACAPÁ/AP",
+    "MO":"MACEIÓ/AL","MN":"MANAUS/AM","MI":"MORRO DA IGREJA/SC","NT":"NATAL/RN",
+    "PL":"PETROLINA/PE","PC":"PICO DO COUTO/RJ","PV":"PORTO VELHO/RO","SV":"SALVADOR/BA",
+    "SN":"SANTARÉM/PA","ST":"SANTA TERESA/ES","SG":"SANTIAGO/RS","SF":"SÃO FRANCISCO/MG",
+    "UA":"SÃO GABRIEL DA CACHOEIRA/AM","SL":"SÃO LUÍS/MA","SR":"SÃO ROQUE/SP",
+    "TT":"TABATINGA/AM","TF":"TEFÉ/AM","TM":"TRÊS MARIAS/MG",
+    "ALMENARA":"ALMENARA/MG","BELÉM":"BELÉM/PA","BELEM":"BELÉM/PA","BOA VISTA":"BOA VISTA/RR",
+    "CANGUÇU":"CANGUÇU/RS","CANGUCU":"CANGUÇU/RS","CRUZEIRO DO SUL":"CRUZEIRO DO SUL/AC",
+    "GAMA":"GAMA/DF","JARAGUARI":"JARAGUARI/MS","MACAPÁ":"MACAPÁ/AP","MACAPA":"MACAPÁ/AP",
+    "MACEIÓ":"MACEIÓ/AL","MACEIO":"MACEIÓ/AL","MANAUS":"MANAUS/AM","MORRO DA IGREJA":"MORRO DA IGREJA/SC",
+    "NATAL":"NATAL/RN","PETROLINA":"PETROLINA/PE","PICO DO COUTO":"PICO DO COUTO/RJ",
+    "PORTO VELHO":"PORTO VELHO/RO","SALVADOR":"SALVADOR/BA","SANTARÉM":"SANTARÉM/PA","SANTAREM":"SANTARÉM/PA",
+    "SANTA TERESA":"SANTA TERESA/ES","SANTIAGO":"SANTIAGO/RS","SÃO FRANCISCO":"SÃO FRANCISCO/MG","SAO FRANCISCO":"SÃO FRANCISCO/MG",
+    "SÃO GABRIEL DA CACHOEIRA":"SÃO GABRIEL DA CACHOEIRA/AM","SAO GABRIEL DA CACHOEIRA":"SÃO GABRIEL DA CACHOEIRA/AM",
+    "SÃO LUÍS":"SÃO LUÍS/MA","SAO LUIS":"SÃO LUÍS/MA","SÃO ROQUE":"SÃO ROQUE/SP","SAO ROQUE":"SÃO ROQUE/SP",
+    "TABATINGA":"TABATINGA/AM","TEFÉ":"TEFÉ/AM","TEFE":"TEFÉ/AM","TRÊS MARIAS":"TRÊS MARIAS/MG","TRES MARIAS":"TRÊS MARIAS/MG"
+  };
+  return known[name]||name||"RADAR SEM IDENTIFICAÇÃO";
+}
 function radarImageUrl(path){if(/^https?:\/\//i.test(path))return path;return "https://api-redemet.decea.mil.br"+(path.startsWith("/")?"":"/")+path}
-function rebuildSelector(items){const s=$("radarSelect"),old=s.value;s.replaceChildren(new Option("Todos os radares","all"));[...new Set(items.map(radarKey))].forEach(k=>{const i=items.find(x=>radarKey(x)===k);s.add(new Option(i.localidade||i.nome||k,k))});if([...s.options].some(o=>o.value===old))s.value=old}
+function rebuildSelector(items){const s=$("radarSelect"),old=s.value;s.replaceChildren(new Option("Todos os radares","all"));[...new Set(items.map(radarKey))].forEach(k=>{const i=items.find(x=>radarKey(x)===k);s.add(new Option(radarDisplayName(i.nome||i.localidade||k),k))});if([...s.options].some(o=>o.value===old))s.value=old}
+function radarCityCoordinates(item){
+  const name=radarDisplayName(item.nome||item.localidade||radarKey(item));
+  const coords={
+    "ALMENARA/MG":[-16.1836,-40.6942],"BELÉM/PA":[-1.4558,-48.4902],"BOA VISTA/RR":[2.8235,-60.6758],
+    "CANGUÇU/RS":[-31.3950,-52.6756],"CRUZEIRO DO SUL/AC":[-7.6276,-72.6756],"GAMA/DF":[-16.0167,-48.0667],
+    "JARAGUARI/MS":[-20.1389,-54.3997],"MACAPÁ/AP":[0.0349,-51.0694],"MACEIÓ/AL":[-9.6498,-35.7089],
+    "MANAUS/AM":[-3.1190,-60.0217],"MORRO DA IGREJA/SC":[-28.1250,-49.4794],"NATAL/RN":[-5.7793,-35.2009],
+    "PETROLINA/PE":[-9.3891,-40.5031],"PICO DO COUTO/RJ":[-22.4560,-43.2910],"PORTO VELHO/RO":[-8.7612,-63.9004],
+    "SALVADOR/BA":[-12.9777,-38.5016],"SANTARÉM/PA":[-2.4431,-54.7083],"SANTA TERESA/ES":[-19.9356,-40.6003],
+    "SANTIAGO/RS":[-29.1917,-54.8672],"SÃO FRANCISCO/MG":[-15.9486,-44.8644],"SÃO GABRIEL DA CACHOEIRA/AM":[-0.1303,-67.0892],
+    "SÃO LUÍS/MA":[-2.5307,-44.3068],"SÃO ROQUE/SP":[-23.5292,-47.1353],"TABATINGA/AM":[-4.2312,-69.9386],
+    "TEFÉ/AM":[-3.3539,-64.7100],"TRÊS MARIAS/MG":[-18.2040,-45.2370]
+  };
+  return coords[name]||[(Number(item.lat_min)+Number(item.lat_max))/2,(Number(item.lon_min)+Number(item.lon_max))/2];
+}
+function teleportToSelectedRadar(){
+  if(!map)return;
+  const selected=$("radarSelect").value;
+  if(selected==="all"){
+    map.setView([-14.2,-51.9],4);
+    return;
+  }
+  const item=(frames.flat().find(x=>radarKey(x)===selected))||radarItems.find(x=>radarKey(x)===selected);
+  if(!item)return;
+  const [lat,lon]=radarCityCoordinates(item);
+  if(Number.isFinite(lat)&&Number.isFinite(lon)){
+    map.flyTo([lat,lon],7,{animate:true,duration:1.1});
+  }
+}
 function currentFrameItems(){
   if(!frames.length)return [];
   const frame=frames[Math.max(0,Math.min(frameIndex,frames.length-1))]||[];
@@ -150,7 +202,7 @@ async function refreshRadar(){
   busy=true;$("refresh").disabled=true;
   const ctl=new AbortController(),timeout=setTimeout(()=>ctl.abort(),15000);
   try{
-    if(API_KEY==="COLOQUE_SUA_CHAVE"){status("Mapa pronto. Insira sua chave REDEMET na variável API_KEY.");return}
+    
     status("Consultando a REDEMET...");
     const url=new URL(RADAR_API);
     url.searchParams.set("api_key",API_KEY);
@@ -175,7 +227,7 @@ async function refreshRadar(){
   }
 }
 function utcHour(){const d=new Date();return d.getUTCFullYear()+String(d.getUTCMonth()+1).padStart(2,"0")+String(d.getUTCDate()).padStart(2,"0")+String(d.getUTCHours()).padStart(2,"0")}
-$("refresh").onclick=refreshRadar;$("radarSelect").onchange=()=>{renderRadar();showFrame(0)};$("toggle").onclick=()=>{radarVisible=!radarVisible;$("toggle").textContent=radarVisible?"Ocultar refletividade":"Mostrar refletividade";renderRadar()};
+$("refresh").onclick=refreshRadar;$("radarSelect").onchange=()=>{renderRadar();showFrame(0);teleportToSelectedRadar()};$("toggle").onclick=()=>{radarVisible=!radarVisible;$("toggle").textContent=radarVisible?"Ocultar refletividade":"Mostrar refletividade";renderRadar()};
 function stopLoop(){if(loopTimer!==null)clearInterval(loopTimer);loopTimer=null;$("playLoop").textContent="▶ Iniciar loop"}
 function showFrame(step){
   if(!frames.length){$("loopInfo").textContent="Atualize o radar primeiro.";return}
@@ -232,27 +284,4 @@ function drawSkew(){
    ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=2.8;
    valid.forEach((r,i)=>i?ctx.lineTo(xT(r[key],r.p),yP(r.p)):ctx.moveTo(xT(r[key],r.p),yP(r.p)));
    ctx.stroke();
-   valid.forEach(r=>{ctx.beginPath();ctx.fillStyle=color;ctx.arc(xT(r[key],r.p),yP(r.p),2.2,0,Math.PI*2);ctx.fill()});
- });
- // Wind barbs: only draw when observed direction and speed are present.
- const wx=right+32;
- ctx.strokeStyle="#111";ctx.fillStyle="#111";ctx.lineWidth=1.4;
- soundingRows.filter(r=>Number.isFinite(r.wdir)&&Number.isFinite(r.wspd)&&r.p>=pTop&&r.p<=pBottom).forEach(r=>{
-   const x=wx,y=yP(r.p),rad=(r.wdir+180)*Math.PI/180;
-   const len=25,dx=Math.sin(rad)*len,dy=-Math.cos(rad)*len;
-   ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+dx,y+dy);ctx.stroke();
-   // Meteorological convention: 5 kt half barb, 10 kt full barb, 50 kt pennant.
-   let remaining=Math.round(r.wspd/5)*5, bx=x+dx,by=y+dy;
-   const ux=-dx/len,uy=-dy/len;
-   while(remaining>=50){ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx+ux*12+uy*7,by+uy*12-ux*7);ctx.lineTo(bx+ux*24,by+uy*24);ctx.closePath();ctx.fill();bx+=ux*5;by+=uy*5;remaining-=50}
-   while(remaining>=10){ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx+ux*12+uy*7,by+uy*12-ux*7);ctx.stroke();bx+=ux*5;by+=uy*5;remaining-=10}
-   if(remaining>=5){ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx+ux*7+uy*4,by+uy*7-ux*4);ctx.stroke()}
- });
- ctx.fillStyle="#d62828";ctx.fillRect(left,H-32,14,3);ctx.fillStyle="#222";ctx.fillText("Temperatura",left+20,H-27);
- ctx.fillStyle="#17803d";ctx.fillRect(left+135,H-32,14,3);ctx.fillStyle="#222";ctx.fillText("Ponto de orvalho",left+155,H-27);
- ctx.strokeStyle="#111";ctx.beginPath();ctx.moveTo(left+310,H-30);ctx.lineTo(left+335,H-30);ctx.stroke();ctx.fillStyle="#222";ctx.fillText("Barbela de vento (quando disponível)",left+342,H-27);
-}
-function addRows(id,rows,emptyText,cols){const body=$(id);body.replaceChildren();if(!rows.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=cols;td.textContent=emptyText;tr.appendChild(td);body.appendChild(tr);return}rows.forEach(row=>{const tr=document.createElement("tr");row.forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});body.appendChild(tr)})}
-function clearSounding(message="Perfil limpo."){soundingRows=[];$("mStation").textContent="Nenhuma";$("mLevels").textContent="0";$("mTop").textContent="—";$("mUpdated").textContent="—";addRows("levelsBody",[],"Sem dados.",3);addRows("diagnosticBody",[],"Sem dados.",2);addRows("indicesBody",[],"Sem dados.",2);soundingStatus(message);drawSkew()}
-$("clearSounding").onclick=()=>clearSounding();
-$("loadSounding").onclick=async()=>{const station=$("stationSelect").value,date=$("soundingDate").value,hour=$("soundingHour").value;if(!date){soundingStatus("Selecione uma data UTC.");return}const btn=$("loadSounding");btn.disabled=true;clearSounding("Consultando a fonte de radiossondagens observadas...");try{const u=new URL(SOUNDING_API);u.searchParams.set("station",station);u.searchParams.set("date",date);u.searchParams.set("hour",hour);let res;try{res=await fetch(u,{headers:{Accept:"application/json"},cache:"no-store"})}catch(netErr){throw Error("Não foi possível acessar "+SOUNDING_API+". Inicie o server.py no mesmo aparelho ou configure SOUNDING_API com a URL HTTPS do servidor. Detalhe: "+netErr.message)}const data=await res.json().catch(()=>({}));if(!res.ok)throw Error(data.detail||data.error||"Serviço indisponível (HTTP "+res.status+").");if(!Array.isArray(data.levels)||data.levels.length<2)throw Error("A fonte não retornou níveis observados suficientes para esta data/hora.");soundingRows=data.levels.map(x=>({p:Number(x.pressure),t:Number(x.temperature),td:x.d
+   valid.forEach(r=>{ctx.beginPath();ctx.fillStyle=color;ctx.arc(xT(r[
